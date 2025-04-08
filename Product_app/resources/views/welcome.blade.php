@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="card">
-    <h1>Welcome to Product Management System</h1>
+    <h1>Welcome to Product Management System 2025</h1>
     <p>A simple application to manage your products.</p>
     
     @guest
