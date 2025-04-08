@@ -8,83 +8,105 @@ use App\Models\Product;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    
     
     public function index()
     {
-        $products = auth()->user()->products;
-        return view('products.index', compact('products'));
+        try {
+            $products = auth()->user()->products;
+            return view('products.index', compact('products'));
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to load products: ' . $e->getMessage());
+        }
     }
-
+    
     public function create()
     {
-        return view('products.create');
+        try {
+            return view('products.create');
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to load create form: ' . $e->getMessage());
+        }
     }
-
+    
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'status' => 'required|in:available,out_of_stock',
-        ]);
-
-        auth()->user()->products()->create($request->all());
-
-        return redirect()->route('products.index')->with('success', 'Product created successfully!');
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'status' => 'required|in:available,out_of_stock',
+            ]);
+    
+            auth()->user()->products()->create($request->all());
+    
+            return redirect()->route('products.index')->with('success', 'Product created successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to create product: ' . $e->getMessage())->withInput();
+        }
     }
-
+    
     public function show(Product $product)
     {
-        if ($product->user_id !== auth()->id()) {
-            abort(403);
+        try {
+            if ($product->user_id !== auth()->id()) {
+                abort(403, 'Unauthorized action.');
+            }
+            
+            return view('products.show', compact('product'));
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to show product: ' . $e->getMessage());
         }
-        
-        return view('products.show', compact('product'));
     }
-
+    
     public function edit(Product $product)
     {
-        if ($product->user_id !== auth()->id()) {
-            abort(403);
+        try {
+            if ($product->user_id !== auth()->id()) {
+                abort(401, 'Unauthorized action.');
+            }
+            
+            return view('products.edit', compact('product'));
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to edit product: ' . $e->getMessage());
         }
-        
-        return view('products.edit', compact('product'));
     }
-
+    
     public function update(Request $request, Product $product)
     {
-        if ($product->user_id !== auth()->id()) {
-            abort(403);
+        try {
+            if ($product->user_id !== auth()->id()) {
+                abort(401, 'Unauthorized action.');
+            }
+            
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'status' => 'required|in:available,out_of_stock',
+            ]);
+    
+            $product->update($request->all());
+    
+            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+        }catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update product: ' . $e->getMessage())->withInput();
         }
-        
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'status' => 'required|in:available,out_of_stock',
-        ]);
-
-        $product->update($request->all());
-
-        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
     }
-
+    
     public function destroy(Product $product)
     {
-        if ($product->user_id !== auth()->id()) {
-            abort(403);
+        try {
+            if ($product->user_id !== auth()->id()) {
+                abort(401, 'Unauthorized action.');
+            }
+            
+            $product->delete();
+    
+            return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to delete product: ' . $e->getMessage());
         }
-        
-        $product->delete();
-
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
     }
 }

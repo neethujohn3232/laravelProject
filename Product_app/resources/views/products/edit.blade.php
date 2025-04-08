@@ -14,7 +14,7 @@
             @enderror
         </div>
         <div class="form-group">
-            <label for="price">Price ($)</label>
+            <label for="price">Price </label>
             <input type="number" step="0.01" id="price" name="price" value="{{ old('price', $product->price) }}" required>
             @error('price')
                 <span style="color: red;">{{ $message }}</span>

@@ -13,89 +13,124 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = auth()->user()->products;
-        return response()->json(['products' => $products]);
+        try {
+            $products = auth()->user()->products;
+            return response()->json(['products' => $products]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
+    
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'status' => 'required|in:available,out_of_stock',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'status' => 'required|in:available,out_of_stock',
+            ]);
+    
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+    
+            $product = auth()->user()->products()->create([
+                'name' => $request->name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'status' => $request->status,
+            ]);
+    
+            return response()->json([
+                'message' => 'Product created successfully',
+                'product' => $product
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to create product',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $product = auth()->user()->products()->create([
-            'name' => $request->name,
-            'price' => $request->price,
-            'stock' => $request->stock,
-            'status' => $request->status,
-        ]);
-
-        return response()->json([
-            'message' => 'Product created successfully',
-            'product' => $product
-        ], 201);
     }
-
+    
     public function show($id)
     {
-        $product = auth()->user()->products()->find($id);
-        
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+        try {
+            $product = auth()->user()->products()->find($id);
+            
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+            
+            return response()->json(['product' => $product]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve product',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        
-        return response()->json(['product' => $product]);
     }
-
+    
     public function update(Request $request, $id)
     {
-        $product = auth()->user()->products()->find($id);
-        
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+        try {
+            $product = auth()->user()->products()->find($id);
+            
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+    
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'status' => 'required|in:available,out_of_stock',
+            ]);
+    
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+    
+            $product->update([
+                'name' => $request->name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'status' => $request->status,
+            ]);
+    
+            return response()->json([
+                'message' => 'Product updated successfully',
+                'product' => $product
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update product',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'status' => 'required|in:available,out_of_stock',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $product->update([
-            'name' => $request->name,
-            'price' => $request->price,
-            'stock' => $request->stock,
-            'status' => $request->status,
-        ]);
-
-        return response()->json([
-            'message' => 'Product updated successfully',
-            'product' => $product
-        ]);
     }
-
+    
     public function destroy($id)
     {
-        $product = auth()->user()->products()->find($id);
-        
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+        try {
+            $product = auth()->user()->products()->find($id);
+            
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+    
+            $product->delete();
+    
+            return response()->json(['message' => 'Product deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete product',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $product->delete();
-
-        return response()->json(['message' => 'Product deleted successfully']);
     }
 }
